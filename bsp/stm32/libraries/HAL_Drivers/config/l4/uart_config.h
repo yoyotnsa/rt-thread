@@ -51,17 +51,29 @@ extern "C" {
 #endif /* BSP_USING_UART1 */
 
 #if defined(BSP_UART1_RX_USING_DMA)
-#ifndef UART1_DMA_CONFIG
-#define UART1_DMA_CONFIG                                            \
+#ifndef UART1_DMA_RX_CONFIG
+#define UART1_DMA_RX_CONFIG                                            \
     {                                                               \
         .Instance = UART1_RX_DMA_INSTANCE,                          \
         .request  = UART1_RX_DMA_REQUEST,                           \
         .dma_rcc  = UART1_RX_DMA_RCC,                               \
         .dma_irq  = UART1_RX_DMA_IRQ,                               \
     }
-#endif /* UART1_DMA_CONFIG */
+#endif /* UART1_DMA_RX_CONFIG */
 #endif /* BSP_UART1_RX_USING_DMA */  
-   
+
+#if defined(BSP_UART1_TX_USING_DMA)
+#ifndef UART1_DMA_TX_CONFIG
+#define UART1_DMA_TX_CONFIG                                            \
+    {                                                               \
+        .Instance = UART1_TX_DMA_INSTANCE,                          \
+        .request  = UART1_TX_DMA_REQUEST,                           \
+        .dma_rcc  = UART1_TX_DMA_RCC,                               \
+        .dma_irq  = UART1_TX_DMA_IRQ,                               \
+    }
+#endif /* UART1_DMA_TX_CONFIG */
+#endif /* BSP_UART1_TX_USING_DMA */
+
 #if defined(BSP_USING_UART2)
 #ifndef UART2_CONFIG
 #define UART2_CONFIG                                                \
@@ -74,16 +86,28 @@ extern "C" {
 #endif /* BSP_USING_UART2 */
 
 #if defined(BSP_UART2_RX_USING_DMA)
-#ifndef UART2_DMA_CONFIG
-#define UART2_DMA_CONFIG                                            \
+#ifndef UART2_DMA_RX_CONFIG
+#define UART2_DMA_RX_CONFIG                                            \
     {                                                               \
         .Instance = UART2_RX_DMA_INSTANCE,                          \
         .request  = UART2_RX_DMA_REQUEST,                           \
         .dma_rcc  = UART2_RX_DMA_RCC,                               \
         .dma_irq  = UART2_RX_DMA_IRQ,                               \
     }
-#endif /* UART2_DMA_CONFIG */
+#endif /* UART2_DMA_RX_CONFIG */
 #endif /* BSP_UART2_RX_USING_DMA */
+
+#if defined(BSP_UART2_TX_USING_DMA)
+#ifndef UART2_DMA_TX_CONFIG
+#define UART2_DMA_TX_CONFIG                                            \
+    {                                                               \
+        .Instance = UART2_TX_DMA_INSTANCE,                          \
+        .request  = UART2_TX_DMA_REQUEST,                           \
+        .dma_rcc  = UART2_TX_DMA_RCC,                               \
+        .dma_irq  = UART2_TX_DMA_IRQ,                               \
+    }
+#endif /* UART2_DMA_TX_CONFIG */
+#endif /* BSP_UART2_TX_USING_DMA */
 
 #if defined(BSP_USING_UART3)
 #ifndef UART3_CONFIG
@@ -97,16 +121,28 @@ extern "C" {
 #endif /* BSP_USING_UART3 */
 
 #if defined(BSP_UART3_RX_USING_DMA)
-#ifndef UART3_DMA_CONFIG
-#define UART3_DMA_CONFIG                                            \
+#ifndef UART3_DMA_RX_CONFIG
+#define UART3_DMA_RX_CONFIG                                            \
     {                                                               \
         .Instance = UART3_RX_DMA_INSTANCE,                          \
         .request  = UART3_RX_DMA_REQUEST,                           \
         .dma_rcc  = UART3_RX_DMA_RCC,                               \
         .dma_irq  = UART3_RX_DMA_IRQ,                               \
     }
-#endif /* UART3_DMA_CONFIG */
+#endif /* UART3_DMA_RX_CONFIG */
 #endif /* BSP_UART3_RX_USING_DMA */
+
+#if defined(BSP_UART3_TX_USING_DMA)
+#ifndef UART3_DMA_TX_CONFIG
+#define UART3_DMA_TX_CONFIG                                            \
+    {                                                               \
+        .Instance = UART3_TX_DMA_INSTANCE,                          \
+        .request  = UART3_TX_DMA_REQUEST,                           \
+        .dma_rcc  = UART3_TX_DMA_RCC,                               \
+        .dma_irq  = UART3_TX_DMA_IRQ,                               \
+    }
+#endif /* UART3_DMA_TX_CONFIG */
+#endif /* BSP_UART3_TX_USING_DMA */
 
 #ifdef __cplusplus
 }

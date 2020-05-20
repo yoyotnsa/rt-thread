@@ -29,6 +29,7 @@
  * 2018-11-22     Jesven       list_thread add smp support
  * 2018-12-27     Jesven       Fix the problem that disable interrupt too long in list_thread 
  *                             Provide protection for the "first layer of objects" when list_*
+ * 2020-04-07     chenhui      add clear 
  */
 
 #include <rthw.h>
@@ -47,6 +48,15 @@ long hello(void)
     return 0;
 }
 FINSH_FUNCTION_EXPORT(hello, say hello world);
+
+long clear(void)
+{
+    rt_kprintf("\x1b[2J\x1b[H");
+
+    return 0;
+}
+FINSH_FUNCTION_EXPORT(clear,clear the terminal screen);
+MSH_CMD_EXPORT(clear,clear the terminal screen);
 
 extern void rt_show_version(void);
 long version(void)
@@ -675,6 +685,8 @@ long list_mempool(void)
             {
                 struct rt_object *obj;
                 struct rt_mempool *mp;
+                int suspend_thread_count;
+                rt_list_t *node;
 
                 obj = rt_list_entry(obj_list[i], struct rt_object, list);
                 level = rt_hw_interrupt_disable();
@@ -687,7 +699,14 @@ long list_mempool(void)
                 rt_hw_interrupt_enable(level);
 
                 mp = (struct rt_mempool *)obj;
-                if (mp->suspend_thread_count > 0)
+
+                suspend_thread_count = 0;
+                rt_list_for_each(node, &mp->suspend_thread)
+                {
+                    suspend_thread_count++;
+                }
+
+                if (suspend_thread_count > 0)
                 {
                     rt_kprintf("%-*.*s %04d  %04d  %04d %d:",
                             maxlen, RT_NAME_MAX,
@@ -695,7 +714,7 @@ long list_mempool(void)
                             mp->block_size,
                             mp->block_total_count,
                             mp->block_free_count,
-                            mp->suspend_thread_count);
+                            suspend_thread_count);
                     show_wait_queue(&(mp->suspend_thread));
                     rt_kprintf("\n");
                 }
@@ -707,7 +726,7 @@ long list_mempool(void)
                             mp->block_size,
                             mp->block_total_count,
                             mp->block_free_count,
-                            mp->suspend_thread_count);
+                            suspend_thread_count);
                 }
             }
         }
@@ -801,6 +820,7 @@ static char *const device_type_str[] =
     "Timer Device",
     "Miscellaneous Device",
     "Sensor Device",
+    "Touch Device",
     "Unknown"
 };
 
@@ -877,7 +897,7 @@ long list(void)
             /* skip the internal command */
             if (strncmp((char *)index->name, "__", 2) == 0) continue;
 
-#ifdef FINSH_USING_DESCRIPTION
+#if defined(FINSH_USING_DESCRIPTION) && defined(FINSH_USING_SYMTAB)
             rt_kprintf("%-16s -- %s\n", index->name, index->desc);
 #else
             rt_kprintf("%s\n", index->name);

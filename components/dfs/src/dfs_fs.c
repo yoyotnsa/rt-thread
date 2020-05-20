@@ -444,7 +444,7 @@ int dfs_mkfs(const char *fs_name, const char *device_name)
     /* lock file system */
     dfs_lock();
     /* find the file system operations */
-    for (index = 0; index <= DFS_FILESYSTEM_TYPES_MAX; index ++)
+    for (index = 0; index < DFS_FILESYSTEM_TYPES_MAX; index ++)
     {
         if (filesystem_operation_table[index] != NULL &&
             strcmp(filesystem_operation_table[index]->name, fs_name) == 0)
@@ -452,7 +452,7 @@ int dfs_mkfs(const char *fs_name, const char *device_name)
     }
     dfs_unlock();
 
-    if (index <= DFS_FILESYSTEM_TYPES_MAX)
+    if (index < DFS_FILESYSTEM_TYPES_MAX)
     {
         /* find file system operation */
         const struct dfs_filesystem_ops *ops = filesystem_operation_table[index];
@@ -508,7 +508,7 @@ int dfs_mount_table(void)
                       mount_table[index].rwflag,
                       mount_table[index].data) != 0)
         {
-            rt_kprintf("mount fs[%s] on %s failed.\n", mount_table[index].filesystemtype,
+            LOG_E("mount fs[%s] on %s failed.\n", mount_table[index].filesystemtype,
                        mount_table[index].path);
             return -RT_ERROR;
         }
@@ -518,6 +518,91 @@ int dfs_mount_table(void)
     return 0;
 }
 INIT_ENV_EXPORT(dfs_mount_table);
+
+int dfs_mount_device(rt_device_t dev)
+{
+  int index = 0;
+  
+  if(dev == RT_NULL) {
+    rt_kprintf("the device is NULL to be mounted.\n");
+    return -RT_ERROR;
+  }
+  
+  while (1)
+  {
+    if (mount_table[index].path == NULL) break;
+    
+    if(strcmp(mount_table[index].device_name, dev->parent.name) == 0) {
+      if (dfs_mount(mount_table[index].device_name,
+                    mount_table[index].path,
+                    mount_table[index].filesystemtype,
+                    mount_table[index].rwflag,
+                    mount_table[index].data) != 0)
+      {
+        LOG_E("mount fs[%s] device[%s] to %s failed.\n", mount_table[index].filesystemtype, dev->parent.name,
+                   mount_table[index].path);
+        return -RT_ERROR;
+      } else {
+        LOG_D("mount fs[%s] device[%s] to %s ok.\n", mount_table[index].filesystemtype, dev->parent.name,
+                   mount_table[index].path);
+        return RT_EOK;
+      }
+    }
+    
+    index ++;
+  }
+  
+  rt_kprintf("can't find device:%s to be mounted.\n", dev->parent.name);
+  return -RT_ERROR;
+}
+
+int dfs_unmount_device(rt_device_t dev)
+{
+    struct dfs_filesystem *iter;
+    struct dfs_filesystem *fs = NULL;
+
+    /* lock filesystem */
+    dfs_lock();
+
+    for (iter = &filesystem_table[0];
+            iter < &filesystem_table[DFS_FILESYSTEMS_MAX]; iter++)
+    {
+        /* check if the PATH is mounted */
+        if ((iter->dev_id->parent.name != NULL)
+            && (strcmp(iter->dev_id->parent.name, dev->parent.name) == 0))
+        {
+            fs = iter;
+            break;
+        }
+    }
+
+    if (fs == NULL ||
+        fs->ops->unmount == NULL ||
+        fs->ops->unmount(fs) < 0)
+    {
+        goto err1;
+    }
+
+    /* close device, but do not check the status of device */
+    if (fs->dev_id != NULL)
+        rt_device_close(fs->dev_id);
+
+    if (fs->path != NULL)
+        rt_free(fs->path);
+
+    /* clear this filesystem table entry */
+    memset(fs, 0, sizeof(struct dfs_filesystem));
+
+    dfs_unlock();
+
+    return 0;
+
+err1:
+    dfs_unlock();
+
+    return -1;
+}
+
 #endif
 
 #ifdef RT_USING_FINSH

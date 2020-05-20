@@ -15,7 +15,7 @@
 #define RT_TICK_PER_SECOND 1000
 #define RT_USING_OVERFLOW_CHECK
 #define RT_USING_HOOK
-#define RT_IDEL_HOOK_LIST_SIZE 4
+#define RT_IDLE_HOOK_LIST_SIZE 4
 #define IDLE_THREAD_STACK_SIZE 512
 /* RT_USING_TIMER_SOFT is not set */
 #define RT_DEBUG
@@ -174,7 +174,6 @@
 
 /* Utilities */
 
-#define RT_USING_LOGTRACE
 #define LOG_TRACE_MAX_SESSION 16
 /* LOG_TRACE_USING_LEVEL_NOTRACE is not set */
 /* LOG_TRACE_USING_LEVEL_ERROR is not set */

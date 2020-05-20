@@ -185,7 +185,7 @@ static rt_err_t drv_pwm_get(TIM_HandleTypeDef *htim, struct rt_pwm_configuration
     rt_uint32_t channel = 0x04 * (configuration->channel - 1);
     rt_uint64_t tim_clock;
 
-#if defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
+#if defined(SOC_SERIES_STM32F2) || defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
     if (htim->Instance == TIM9 || htim->Instance == TIM10 || htim->Instance == TIM11)
 #elif defined(SOC_SERIES_STM32L4)
     if (htim->Instance == TIM15 || htim->Instance == TIM16 || htim->Instance == TIM17)
@@ -205,7 +205,7 @@ static rt_err_t drv_pwm_get(TIM_HandleTypeDef *htim, struct rt_pwm_configuration
         tim_clock = HAL_RCC_GetPCLK1Freq() * 2;
 #endif
     }
-    
+
     if (__HAL_TIM_GET_CLOCKDIVISION(htim) == TIM_CLOCKDIVISION_DIV2)
     {
         tim_clock = tim_clock / 2;
@@ -230,7 +230,7 @@ static rt_err_t drv_pwm_set(TIM_HandleTypeDef *htim, struct rt_pwm_configuration
     /* Converts the channel number to the channel number of Hal library */
     rt_uint32_t channel = 0x04 * (configuration->channel - 1);
 
-#if defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
+#if defined(SOC_SERIES_STM32F2) || defined(SOC_SERIES_STM32F4) || defined(SOC_SERIES_STM32F7)
     if (htim->Instance == TIM9 || htim->Instance == TIM10 || htim->Instance == TIM11)
 #elif defined(SOC_SERIES_STM32L4)
     if (htim->Instance == TIM15 || htim->Instance == TIM16 || htim->Instance == TIM17)
@@ -322,9 +322,10 @@ static rt_err_t stm32_hw_pwm_init(struct stm32_pwm *device)
 #if defined(SOC_SERIES_STM32F1) || defined(SOC_SERIES_STM32L4)
     tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 #endif
-    if (HAL_TIM_Base_Init(tim) != HAL_OK)
+
+    if (HAL_TIM_PWM_Init(tim) != HAL_OK)
     {
-        LOG_E("%s time base init failed", device->name);
+        LOG_E("%s pwm init failed", device->name);
         result = -RT_ERROR;
         goto __exit;
     }
@@ -333,13 +334,6 @@ static rt_err_t stm32_hw_pwm_init(struct stm32_pwm *device)
     if (HAL_TIM_ConfigClockSource(tim, &clock_config) != HAL_OK)
     {
         LOG_E("%s clock init failed", device->name);
-        result = -RT_ERROR;
-        goto __exit;
-    }
-
-    if (HAL_TIM_PWM_Init(tim) != HAL_OK)
-    {
-        LOG_E("%s pwm init failed", device->name);
         result = -RT_ERROR;
         goto __exit;
     }
@@ -357,6 +351,8 @@ static rt_err_t stm32_hw_pwm_init(struct stm32_pwm *device)
     oc_config.Pulse = 0;
     oc_config.OCPolarity = TIM_OCPOLARITY_HIGH;
     oc_config.OCFastMode = TIM_OCFAST_DISABLE;
+    oc_config.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+    oc_config.OCIdleState  = TIM_OCIDLESTATE_RESET;
 
     /* config pwm channel */
     if (device->channel & 0x01)
@@ -411,6 +407,18 @@ __exit:
 
 static void pwm_get_channel(void)
 {
+#ifdef BSP_USING_PWM1_CH1
+    stm32_pwm_obj[PWM1_INDEX].channel |= 1 << 0;
+#endif
+#ifdef BSP_USING_PWM1_CH2
+    stm32_pwm_obj[PWM1_INDEX].channel |= 1 << 1;
+#endif
+#ifdef BSP_USING_PWM1_CH3
+    stm32_pwm_obj[PWM1_INDEX].channel |= 1 << 2;
+#endif
+#ifdef BSP_USING_PWM1_CH4
+    stm32_pwm_obj[PWM1_INDEX].channel |= 1 << 3;
+#endif
 #ifdef BSP_USING_PWM2_CH1
     stm32_pwm_obj[PWM2_INDEX].channel |= 1 << 0;
 #endif
@@ -507,6 +515,12 @@ static void pwm_get_channel(void)
 #ifdef BSP_USING_PWM9_CH4
     stm32_pwm_obj[PWM9_INDEX].channel |= 1 << 3;
 #endif
+#ifdef BSP_USING_PWM12_CH1
+    stm32_pwm_obj[PWM12_INDEX].channel |= 1 << 0;
+#endif
+#ifdef BSP_USING_PWM12_CH2
+    stm32_pwm_obj[PWM12_INDEX].channel |= 1 << 1;
+#endif
 }
 
 static int stm32_pwm_init(void)
@@ -530,9 +544,8 @@ static int stm32_pwm_init(void)
             LOG_D("%s init success", stm32_pwm_obj[i].name);
 
             /* register pwm device */
-            if (rt_device_pwm_register(rt_calloc(1, sizeof(struct rt_device_pwm)), stm32_pwm_obj[i].name, &drv_ops, &stm32_pwm_obj[i].tim_handle) == RT_EOK)
+            if (rt_device_pwm_register(&stm32_pwm_obj[i].pwm_device, stm32_pwm_obj[i].name, &drv_ops, &stm32_pwm_obj[i].tim_handle) == RT_EOK)
             {
-
                 LOG_D("%s register success", stm32_pwm_obj[i].name);
             }
             else
